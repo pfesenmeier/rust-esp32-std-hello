@@ -1,0 +1,19 @@
+PROJECT_DIR=/home/pfes/rust-esp32-std-hello
+
+esp-flash () {
+  cargo build && espflash.exe COM6 "$PROJECT_DIR/target/riscv32imc-esp-espidf/debug/rust-esp32-std-demo"
+}
+
+esp-monitor () {
+  cd $PROJECT_DIR
+  cargo-pio.exe espidf monitor COM6
+}
+
+esp-start () {
+  cd $PROJECT_DIR
+  esp-flash
+  esp-monitor
+}
+
+// Look for ClientSettings { ip: ...}
+// http://192.168.50.112/

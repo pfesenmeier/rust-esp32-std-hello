@@ -76,6 +76,8 @@ use ssd1306;
 use ssd1306::mode::DisplayConfig;
 use st7789;
 
+mod etekcity_plug;
+
 #[allow(dead_code)]
 #[cfg(not(feature = "qemu"))]
 const SSID: &str = env!("RUST_ESP32_STD_DEMO_WIFI_SSID");
