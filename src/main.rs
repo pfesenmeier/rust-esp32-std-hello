@@ -108,7 +108,7 @@ fn main() -> Result<()> {
     esp_idf_svc::log::EspLogger::initialize_default();
 
     // Get backtraces from anyhow; only works for Xtensa arch currently
-    #[cfg(arch = "xtensa")]
+    #[cfg(target_arch = "xtensa")]
     env::set_var("RUST_BACKTRACE", "1");
 
     #[allow(unused)]
@@ -182,13 +182,13 @@ fn main() -> Result<()> {
             rmii_rdx0: pins.gpio25,
             rmii_rdx1: pins.gpio26,
             rmii_crs_dv: pins.gpio27,
-            rmii_mdc: pins.gpio12,
+            rmii_mdc: pins.gpio23,
             rmii_txd1: pins.gpio22,
             rmii_tx_en: pins.gpio21,
             rmii_txd0: pins.gpio19,
-            rmii_mdio: pins.gpio13,
+            rmii_mdio: pins.gpio18,
             rmii_ref_clk: pins.gpio0,
-            rst: Some(pins.gpio14),
+            rst: Some(pins.gpio5),
         },
         RmiiEthChipset::IP101,
         None,
@@ -658,9 +658,6 @@ fn esp32s3_usb_otg_hello_world(
     cs: gpio::Gpio5<gpio::Unknown>,
 ) -> Result<()> {
     info!("About to initialize the ESP32-S3-USB-OTG SPI LED driver ST7789VW");
-
-    let peripherals = Peripherals::take().unwrap();
-    let pins = peripherals.pins;
 
     let config = <spi::config::Config as Default>::default()
         .baudrate(80.MHz().into())
