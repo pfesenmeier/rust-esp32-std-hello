@@ -66,7 +66,7 @@ st7789 = "0.6"
 ili9341 = { version = "0.5", git = "https://github.com/yuri91/ili9341-rs" }
 ssd1306 = "0.7"
 smol = "1.2"
-vesync = "0.1"
+vesync = { version = "0.1", git = "https://github.com/pfesenmeier/vesync-rs" }
 
 [build-dependencies]
 embuild = "0.25"
