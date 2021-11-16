@@ -2,6 +2,7 @@ use std::sync::{Condvar, Mutex};
 use std::{cell::RefCell, env, sync::Arc, thread, time::*};
 
 use anyhow::*;
+use embedded_hal::digital::v2::ToggleableOutputPin;
 use log::*;
 
 use embedded_svc::httpd::registry::*;
@@ -18,12 +19,13 @@ use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 
 use esp_idf_sys;
-
-use rust_esp32_std_demo::etekcity_plug;
+use vesync::{VeSyncAccount, VeSyncDevice};
 
 const SSID: &str = env!("RUST_ESP32_STD_DEMO_WIFI_SSID");
-
 const PASS: &str = env!("RUST_ESP32_STD_DEMO_WIFI_PASS");
+const VESYNC_ACCOUNT: &str = env!("VESYNC_ACCOUNT");
+const VESYNC_KEY: &str = env!("VESYNC_KEY");
+const VESYNC_DEVICE_CID: &str = env!("VESYNC_DEVICE_CID");
 
 thread_local! {
     static TLS: RefCell<u32> = RefCell::new(13);
@@ -49,14 +51,13 @@ fn main() -> Result<()> {
     let httpd = httpd(mutex.clone())?;
     let mut wait = mutex.0.lock().unwrap();
 
-    #[allow(unused)]
-    let cycles = loop {
+    loop {
         if let Some(cycles) = *wait {
-            break cycles;
+            break;
         } else {
             wait = mutex.1.wait(wait).unwrap();
         }
-    };
+    }
 
     for s in 0..3 {
         info!("Shutting down in {} secs", 3 - s);
@@ -72,11 +73,20 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-#[allow(unused_variables)]
-fn httpd(mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> Result<idf::Server> {
+fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> Result<idf::Server> {
     let server = idf::ServerRegistry::new()
         .at("/")
-        .get(|_| Ok("Hello from Rust!".into()))?
+        .get(|_| {
+            let account = VeSyncAccount::login(VESYNC_ACCOUNT, VESYNC_KEY).unwrap();
+            let devices = account.get_devices().unwrap();
+
+            let mut device = devices
+                .into_iter()
+                .find(|device| device.cid == VESYNC_DEVICE_CID)
+                .unwrap();
+            device.device_toggle().unwrap();
+            Ok("Device toggled!".into())
+        })?
         .at("/foo")
         .get(|_| bail!("Boo, something happened!"))?
         .at("/bar")
