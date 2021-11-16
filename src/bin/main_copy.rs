@@ -2,7 +2,6 @@ use std::sync::{Condvar, Mutex};
 use std::{cell::RefCell, env, sync::Arc, thread, time::*};
 
 use anyhow::*;
-use embedded_hal::digital::v2::ToggleableOutputPin;
 use log::*;
 
 use embedded_svc::httpd::registry::*;
@@ -19,7 +18,7 @@ use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 
 use esp_idf_sys;
-use vesync::{VeSyncAccount, VeSyncDevice};
+use vesync::{VeSyncAccount};
 
 const SSID: &str = env!("RUST_ESP32_STD_DEMO_WIFI_SSID");
 const PASS: &str = env!("RUST_ESP32_STD_DEMO_WIFI_PASS");
@@ -52,7 +51,7 @@ fn main() -> Result<()> {
     let mut wait = mutex.0.lock().unwrap();
 
     loop {
-        if let Some(cycles) = *wait {
+        if let Some(_cycles) = *wait {
             break;
         } else {
             wait = mutex.1.wait(wait).unwrap();
