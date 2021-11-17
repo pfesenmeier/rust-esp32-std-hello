@@ -18,7 +18,7 @@ use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 
 use esp_idf_sys;
-use vesync::{VeSyncAccount};
+use vesync::VeSyncAccount;
 
 const SSID: &str = env!("RUST_ESP32_STD_DEMO_WIFI_SSID");
 const PASS: &str = env!("RUST_ESP32_STD_DEMO_WIFI_PASS");
@@ -45,6 +45,9 @@ fn main() -> Result<()> {
         sys_loop_stack.clone(),
         default_nvs.clone(),
     )?;
+
+    #[cfg(feature = "experimental")]
+    test_https_client()?;
 
     let mutex = Arc::new((Mutex::new(None), Condvar::new()));
     let httpd = httpd(mutex.clone())?;
@@ -76,14 +79,22 @@ fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> Result<idf::Server> {
     let server = idf::ServerRegistry::new()
         .at("/")
         .get(|_| {
-            let account = VeSyncAccount::login(VESYNC_ACCOUNT, VESYNC_KEY).unwrap();
-            let devices = account.get_devices().unwrap();
+            info!("Found handler");
+            let account = VeSyncAccount::login(VESYNC_ACCOUNT, VESYNC_KEY);
+            if let Ok(account) = account {
+                info!("Found account");
+                if let Ok(devices) = account.get_devices() {
+                    info!("Found devices");
+                    if let Some(mut device) = devices
+                        .into_iter()
+                        .find(|device| device.cid == VESYNC_DEVICE_CID)
+                    {
+                        info!("Found device");
+                        device.device_toggle().unwrap();
+                    }
+                }
+            }
 
-            let mut device = devices
-                .into_iter()
-                .find(|device| device.cid == VESYNC_DEVICE_CID)
-                .unwrap();
-            device.device_toggle().unwrap();
             Ok("Device toggled!".into())
         })?
         .at("/foo")
@@ -171,6 +182,34 @@ fn ping(ip_settings: &ipv4::ClientSettings) -> Result<()> {
     }
 
     info!("Pinging done");
+
+    Ok(())
+}
+
+#[cfg(feature = "experimental")]
+fn test_https_client() -> Result<()> {
+    use embedded_svc::http::{self, client::*, status, HttpHeaders, HttpStatus};
+    use esp_idf_svc::http::client::*;
+
+    info!("testing my client");
+
+    let url = String::from("https://google.com");
+
+    info!("About to fetch content from {}", url);
+
+    let mut client = EspHttpClient::new_default()?;
+
+    let response = client.get(&url)?.submit()?;
+
+    let mut body = Vec::new();
+    io::StdIO(response.into_payload())
+        .take(3084)
+        .read_to_end(&mut body)?;
+
+    info!(
+        "Body (truncated to 3K):\n{:?}",
+        String::from_utf8_lossy(&body).into_owned()
+    );
 
     Ok(())
 }
