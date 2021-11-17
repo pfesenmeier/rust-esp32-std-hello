@@ -34,7 +34,6 @@ use url;
 
 use smol;
 
-use embedded_svc::anyerror::*;
 use embedded_svc::eth;
 use embedded_svc::eth::Eth;
 use embedded_svc::httpd::registry::*;
@@ -42,6 +41,7 @@ use embedded_svc::httpd::*;
 use embedded_svc::io;
 use embedded_svc::ipv4;
 use embedded_svc::ping::Ping;
+use embedded_svc::utils::anyerror::*;
 use embedded_svc::wifi::*;
 
 use esp_idf_svc::eth::*;
@@ -50,6 +50,7 @@ use esp_idf_svc::httpd::ServerRegistry;
 use esp_idf_svc::netif::*;
 use esp_idf_svc::nvs::*;
 use esp_idf_svc::ping;
+use esp_idf_svc::sntp;
 use esp_idf_svc::sysloop::*;
 use esp_idf_svc::wifi::*;
 
@@ -226,6 +227,9 @@ fn main() -> Result<()> {
     #[cfg(not(feature = "qemu"))]
     #[cfg(esp_idf_config_lwip_ipv4_napt)]
     enable_napt(&mut wifi)?;
+
+    let _sntp = sntp::EspSntp::new_default()?;
+    info!("SNTP initialized");
 
     let mutex = Arc::new((Mutex::new(None), Condvar::new()));
 
@@ -612,7 +616,7 @@ fn heltec_hello_world(
 
     let di = ssd1306::I2CDisplayInterface::new(i2c::Master::<i2c::I2C0, _, _>::new(
         i2c,
-        i2c::Pins { sda, scl },
+        i2c::MasterPins { sda, scl },
         config,
     )?);
 
@@ -627,14 +631,12 @@ fn heltec_hello_world(
 
     reset.set_high()?;
 
-    let mut display = Box::new(
-        ssd1306::Ssd1306::new(
-            di,
-            ssd1306::size::DisplaySize128x64,
-            ssd1306::rotation::DisplayRotation::Rotate0,
-        )
-        .into_buffered_graphics_mode(),
-    );
+    let mut display = ssd1306::Ssd1306::new(
+        di,
+        ssd1306::size::DisplaySize128x64,
+        ssd1306::rotation::DisplayRotation::Rotate0,
+    )
+    .into_buffered_graphics_mode();
 
     AnyError::<display_interface::DisplayError>::wrap(|| {
         display.init()?;

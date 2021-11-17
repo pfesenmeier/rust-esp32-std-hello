@@ -1,6 +1,6 @@
 [package]
 name = "rust-esp32-std-demo"
-version = "0.20.2"
+version = "0.20.6"
 authors = ["ivmarkov"]
 edition = "2018"
 categories = ["embedded", "hardware-support"]
@@ -17,11 +17,11 @@ socket2 = { git = "https://github.com/esp-rs-compat/socket2" }
 getrandom = { version = "0.2", git = "https://github.com/esp-rs-compat/getrandom.git" }
 
 [profile.release]
-debug = true # Symbols are nice and they don't increase the size on Flash
-opt-level = "z"
+opt-level = "s"
 
 [profile.dev]
-opt-level = "s"
+debug = true # Symbols are nice and they don't increase the size on Flash
+opt-level = "z"
 
 [features]
 # Enable this feature for the build to use ESP-IDF native tooling instead of PlatformIO under the hood
@@ -53,10 +53,10 @@ experimental = ["esp-idf-svc/experimental", "embedded-svc/experimental"]
 anyhow = {version = "1", features = ["backtrace"]}
 log = "0.4"
 url = "2"
-esp-idf-sys = { version = "0.24.3", features = ["binstart"] }
-embedded-svc = "0.12"
-esp-idf-svc = "0.28.1"
-esp-idf-hal = "0.23.2"
+esp-idf-sys = { version = "0.25", features = ["binstart"] }
+embedded-svc = "0.13"
+esp-idf-svc = "0.30"
+esp-idf-hal = "0.25"
 embedded-hal = "0.2"
 embedded-graphics = "0.7"
 display-interface = "0.4"
